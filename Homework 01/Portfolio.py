@@ -30,12 +30,17 @@ class Portofolio():
         else : 
             print("Transaction failed: not enough cash")
 
+    def withdrawCash(self, amount):
+        if amount <= self.cash:
+            self.addCash(-amount)
+            print("${} withdrawn succefully".format(amount))
+        else :
+            print("Cash withdrawal failed: not enough cash")
+
     def __str__(self):
         return """Balance: {}\n
                 Purchased Stocks: {}\n
                 Purchased Mutual Funds{}\n""".format(self.cash, self.stocks, self.mutual_funds)
                 
     def __repr__(self):
-        return """Balance: {}\n
-                Purchased Stocks: {}\n
-                Purchased Mutual Funds{}\n""".format(self.cash, self.stocks, self.mutual_funds)
+        return "\nBalance: {}\nPurchased Stocks: {}\nPurchased Mutual Funds: {}\n".format(self.cash, self.stocks, self.mutual_funds)
