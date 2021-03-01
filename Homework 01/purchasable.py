@@ -4,11 +4,12 @@ class Purchasable():
         self.price = price 
         self.symbol = symbol
 
-    def getPrice(self):
-        raise NotImplementedError("Sublass must implement getPrice()")
+
+    def __eq__(self, other):
+        return self.symbol == other.symbol
 
     def __str__(self):
         return "Price: {}\nTicker Symbol: {}".format(self.price, self.symbol)
 
     def __repr__(self):
-        return "Price: {}\nTicker Symbol: {}".format(self.price, self.symbol)
+        return self.__str__()
