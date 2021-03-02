@@ -9,7 +9,7 @@ class Purchasable():
         return self.symbol == other.symbol
 
     def __str__(self):
-        return "Price: {}\nTicker Symbol: {}".format(self.price, self.symbol)
+        return "Price: {} | Ticker Symbol: {}".format(self.price, self.symbol)
 
     def __repr__(self):
         return self.__str__()
