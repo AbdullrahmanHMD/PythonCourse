@@ -1,11 +1,10 @@
 import numpy as np 
-import datetime
 import pandas as pd
+import datetime
 import os
 
 from dateutil.relativedelta import relativedelta
 from forex_python.converter import CurrencyRates
-
 
 def getData(numberOfPoints, jump):
 
@@ -22,11 +21,14 @@ def getData(numberOfPoints, jump):
     
     return np.array(dates), np.array(tl_rates)
 
-number_of_days = 10
-dates, rates = getData(number_of_days, 100)
+number_of_days = 100
+jump = 1
 
-data = np.stack((dates, rates), axis=1)
+dates, rates = getData(number_of_days, jump)
+day_numbering = [(number_of_days - i) * jump for i in range(1, number_of_days + 1)]
 
-path = os.path.abspath(os.getcwd()) + "/file.csv"
+data = np.stack((dates, day_numbering, rates), axis=1)
 
-pd.DataFrame(data, columns=['Date', 'TL value in USD']).to_csv(path)
+path = os.path.abspath(os.getcwd()) + "/data.csv"
+
+pd.DataFrame(data, columns=['Date', 'Day #', 'TL value in USD']).to_csv(path)
