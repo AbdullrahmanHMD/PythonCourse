@@ -1,5 +1,6 @@
 import numpy as np 
 import pandas as pd
+import math
 import datetime
 import os
 import matplotlib.pyplot as plt
@@ -17,40 +18,38 @@ rates = data[:,3]
 X = days_numbering
 Y_truth = rates
 
-# def predict_rate(X, Y, x_i):
-#     term_1 = N * sum(np.multiply(x,y)) - sum(x) * sum(y)
-#     term_2 = N * sum(X**2) - (sum(X))**2
-
-#     m = term_1 / term_2
-
-#     b = (sum(Y) - m * sum(X)) / N
-
-#     f = lambda x : m * x + b
-#     errors = np.subtract(y, y_pred)
-#     return f(x_i), errors
-
-
 def predicted_y(X, Y):
     X = np.array(X).reshape(len(X), 1)
     
-    n, m = X.shape
+    n, k = X.shape
+
+    # Appending a vector of ones to the X matrix.
     ones = np.ones((n,1))
     X = np.hstack((ones, X))
-    temp_mat = np.matrix(np.dot(X.transpose(), X), dtype='float')
-    
+
+    # Calculating the Beta values.
+    temp_mat = np.matrix(np.dot(X.T, X), dtype='float')
     term_1 = np.linalg.inv(temp_mat)
-    term_2 = np.dot(X.transpose(), Y)
+    term_2 = np.dot(X.T, Y)
+    beta_vals = np.dot(term_1, term_2)
 
-    y_hat = np.dot(term_1, term_2)
+    # Calculating the predicted Y values.
+    y_pred = np.array(np.dot(X, beta_vals.T))
 
-    y_pred = np.dot(X, y_hat.transpose())
-    errors = np.subtract(Y.reshape(len(Y), 1), y_pred)
-    
-    return y_pred, errors
+    # Calculating the standard error
+    error = np.subtract(Y.reshape(len(Y), 1), y_pred)
+    variance = np.dot(error.T, error) / (n - k - 1)
+    standard_error = math.sqrt(variance) / math.sqrt(n)
 
 
-y_pred, errors = predicted_y(X, Y_truth)
+    temp_mat = np.matrix(np.dot(X.T, X), dtype='float')
+    var_y_hat = np.multiply(variance, np.linalg.inv(temp_mat))
+ 
+    return y_pred, standard_error
 
+y_pred, standard_error = predicted_y(X, Y_truth)
+
+print("Standard error: {}".format(standard_error))
 
 plt.plot(days_numbering, y_pred)
 plt.scatter(days_numbering, rates, color='green')
