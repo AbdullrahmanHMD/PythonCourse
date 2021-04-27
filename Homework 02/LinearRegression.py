@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import sem
 import statistics
 
+# Retrieving data from the csv file.
 file_name = "data.csv"
 path = os.path.abspath(os.getcwd()) + '\\' + file_name
 data = pd.read_csv(path).to_numpy()
@@ -30,8 +31,10 @@ def isArrayNumeric(array):
             indexes.append(i)
     return indexes
 
-
-def credibleIntervals(X, Y, y_pred, confidence_level, xshape, yshape):
+# credibleIntervals: finds the credible intervals given a confidence level
+# returns the credible intervals, means and standard errors of samples from
+# the given data set with specified sizes.
+def credibleIntervals(X, Y, y_pred, confidence_level, number_of_samples, sample_size):
     n, k = X.shape
     low_interval = []
     high_interval = []
@@ -41,11 +44,11 @@ def credibleIntervals(X, Y, y_pred, confidence_level, xshape, yshape):
 
     i = 0
     variance = 0
-    for sublist in y_pred.reshape(xshape, yshape):
+    for sublist in y_pred.reshape(number_of_samples, sample_size):
         samples = []
         for point in sublist:
-            error = np.subtract(Y.reshape(xshape, yshape)[i], sublist)
-            variance = np.dot(error.T, error) / (yshape - 1 - k)
+            error = np.subtract(Y.reshape(number_of_samples, sample_size)[i], sublist)
+            variance = np.dot(error.T, error) / (sample_size - 1 - k)
             samples.append(point)
 
         i += 1
@@ -59,7 +62,7 @@ def credibleIntervals(X, Y, y_pred, confidence_level, xshape, yshape):
         high_interval.append(high)
 
         means.append(mean)
-        standard_errors.append(standard_errors)
+        standard_errors.append(standard_error)
     
     return low_interval, high_interval, means, standard_errors
     
@@ -131,6 +134,7 @@ def LinearRegression(X, Y):
 
     # Calculating the credible intervals with 0.95 confidence.
     confidence_level = 1.96
+
     number_of_samples = 20
     size_of_sample = 5
     
@@ -142,49 +146,33 @@ y_pred, standard_errors, low_interval, high_interval, means = LinearRegression(X
 
 # --Plotting the data-----------------------------
 
+fig = plt.figure(figsize=(9, 6))
+
 # Plotting the points.
-plt.plot(days_numbering, y_pred)
 plt.scatter(days_numbering, rates, color='green')
 
-# Plotting the credible intervals
-plt.plot(days_numbering[::5], low_interval, color='r')
-plt.plot(days_numbering[::5], high_interval, color='r')
+# Plotting regression line.
+plt.plot(days_numbering, y_pred)
+
+# Plotting the credible intervals.
+plt.plot(days_numbering[::5], low_interval, color='r', linestyle='dashed', markerfacecolor='blue')
+plt.plot(days_numbering[::5], high_interval, color='r', linestyle='dashed', markerfacecolor='blue')
 
 plt.xlabel('Date / Day number')
 plt.ylabel('USD to TL rate')
 plt.show()
-# # Plotting the points.
-plt.plot(days_numbering, y_pred)
+
+#-------------------------------------------------------------------
+
+fig = plt.figure(figsize=(9, 6))
+
+# # # Plotting the points.
 plt.scatter(days_numbering, rates, color='green')
 
 # # Plotting the credible intervals
-
 plt.errorbar(x = days_numbering[::5], y=np.array(means), yerr=np.array(standard_errors), color='blue')
+
 plt.xlabel('Date / Day number')
 plt.ylabel('USD to TL rate')
 plt.show()
 
-
-
-
-
-
-
-
-    # standard_errors = []
-    # j = 0
-    # for i in y_pred.reshape(20, 5):
-    #     samples = []
-    #     var = 0
-    #     for point in y_pred.reshape(20, 5)[j]:
-    #         error = np.subtract(Y.reshape(20, 5)[j], y_pred.reshape(20, 5)[j])
-    #         var = np.dot(error.T, error) / (5 - 1 - k)
-    #         samples.append(point)
-    #     j += 1
-    #     se =  confidence_level * math.sqrt(var / 5)
-    #     mean = np.mean(samples)
-    #     low = mean - se 
-    #     high = mean + se
-
-    #     l_interval.append(low)
-    #     h_interval.append(high)
