@@ -94,17 +94,18 @@ def optimal_k(step):
     print(accuracies)
     return (np.argmax(accuracies) + 1) * step, accuracies
         
+step = 10
+
 # After running the below line of code I figured
 # That the optimal k is 30.
 # NOTE: Running the optimal_k() function would
 # take a long time. approximately 35-40 mins.
-# NOTE: I run the function and provided a txt file
-# that contains the accuracy values for each run.
-
-step = 10
-# k = optimal_k(step)
+# NOTE: I ran the function and provided a txt file
+# called knn_optimization that contains the accuracy
+#  values for each run.
 
 k = 30
+
 model = KNeighborsClassifier(n_neighbors=k)
 
 model.fit(X_train, Y_train)
@@ -115,8 +116,8 @@ print("K nearest neighbors classifier accuracy: {}".format(knn_accuracy))
 
 # Shows the graph of the optimization of the k
 # value for the KNN.
-def show_k_optimization(step):
-    file_name = "knn_optimization.txt"
+def plot_optimization(step, file_name, xlabel, ylabel):
+
     text_file = open(file_name, "r")
     entries = text_file.readline()
     entries = np.array(entries.split(", ")).astype(float)
@@ -124,59 +125,56 @@ def show_k_optimization(step):
     indep_vars = np.array(list(range(0, len(entries))))
     indep_vars = np.multiply(step, indep_vars)
 
-    plt.xlabel("K value")
-    plt.ylabel("Accuracy")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
 
     plt.plot(indep_vars, entries)
     plt.show()
 
-show_k_optimization(step)
+file_name = "knn_optimization.txt"
+plot_optimization(step, file_name, "K value", "Accuracy")
 
 #------------------------------------------------------------
 # --|   Classification with Logistic Regression    |---------
 #------------------------------------------------------------
 
-
 def optimal_iter_number(step):
-    iter_number = 10
-    epsilon = 0.0001
     accuracies = []
-    i = 0
+    i = 1
     while(i < len(X_train)):
-        if i != 0:
-            iter_number = i
             
-        model = LogisticRegression(random_state=0, solver='saga', max_iter=iter_number)
+        model = LogisticRegression(random_state=0, solver='sag', max_iter=i)
         model.fit(X_train, Y_train)
         y_pred = model.predict(X_test)
         logistic_accuracy = accuracy_score(Y_test, y_pred)
         accuracies.append(logistic_accuracy)
 
-        if len(accuracies) >= 2:
-            if (accuracies[i] - accuracies[i - 1]) < epsilon:
-                break
-
-        print(i)
         i += step
-    return i
+    return i, accuracies
 
 step = 100
-optimal_iter_number(step)
 
-iter_number = 100
-model = LogisticRegression(random_state=0, solver='saga', max_iter=iter_number)
+
+# After running the below line of code I figured
+# That the optimal iter_number ranges from 1 to 400.
+# NOTE: Running the optimal_iter_number() function would
+# take a long time. approximately 15-20 mins.
+# NOTE: I ran the function and provided a txt file
+# called logit_optimization that contains the accuracy
+# values for each run.
+
+# b, p = optimal_iter_number(step)
+
+iter_number = 400
+
+model = LogisticRegression(random_state=0, solver='sag', max_iter=iter_number)
 model.fit(X_train, Y_train)
 y_pred = model.predict(X_test)
 logistic_accuracy = accuracy_score(Y_test, y_pred)
 print("Logistic Regression accuracy: {}".format(logistic_accuracy))
 
+file_name = "logit_optimization.txt"
+plot_optimization(step, file_name, "Maximum iterations", "Accuracy")
+
 #------------------------------------------------------------
-
-
-# from sklearn.metrics import classification_report
-# print(classification_report(X_test, Y_test))
-
-# Plotting.
-# plt.scatter(X_train[:,-1], Y_train, color="blue")
-# plt.show()
 
