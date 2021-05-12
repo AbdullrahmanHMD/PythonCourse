@@ -71,6 +71,9 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, y_truth_binary, test_size
 # To calclate the accuracy of the models.
 from sklearn.metrics import accuracy_score
 
+# To calculate the confusion matrix.
+from sklearn.metrics import confusion_matrix
+
 #--------------------------------------------
 # --|   Using K Nearest Neighbor   |---------
 #--------------------------------------------
@@ -92,7 +95,7 @@ def optimal_k(step):
         accuracies.append(knn_accuracy)
         i += step
     print(accuracies)
-    return (np.argmax(accuracies) + 1) * step, accuracies
+    return (np.argmax(accuracies) + 1) * step
         
 step = 10
 
@@ -103,6 +106,8 @@ step = 10
 # NOTE: I ran the function and provided a txt file
 # called knn_optimization that contains the accuracy
 #  values for each run.
+
+# k = optimal_k(step)
 
 k = 30
 
@@ -134,6 +139,15 @@ def plot_optimization(step, file_name, xlabel, ylabel):
 file_name = "knn_optimization.txt"
 plot_optimization(step, file_name, "K value", "Accuracy")
 
+# Confusion matrix configuration
+
+conf_matrix = confusion_matrix(Y_test, y_pred)
+sns.heatmap(conf_matrix.T, square=True, annot=True, fmt='d', cbar=False)
+
+plt.xlabel('Y_truth')
+plt.ylabel('Y_pred')
+plt.show()
+
 #------------------------------------------------------------
 # --|   Classification with Logistic Regression    |---------
 #------------------------------------------------------------
@@ -150,10 +164,9 @@ def optimal_iter_number(step):
         accuracies.append(logistic_accuracy)
 
         i += step
-    return i, accuracies
+    return i
 
 step = 100
-
 
 # After running the below line of code I figured
 # That the optimal iter_number ranges from 1 to 400.
@@ -163,7 +176,7 @@ step = 100
 # called logit_optimization that contains the accuracy
 # values for each run.
 
-# b, p = optimal_iter_number(step)
+# iter_number = optimal_iter_number(step)
 
 iter_number = 400
 
@@ -175,6 +188,15 @@ print("Logistic Regression accuracy: {}".format(logistic_accuracy))
 
 file_name = "logit_optimization.txt"
 plot_optimization(step, file_name, "Maximum iterations", "Accuracy")
+
+# Confusion matrix configuration
+
+conf_matrix = confusion_matrix(Y_test, y_pred)
+sns.heatmap(conf_matrix.T, square=True, annot=True, fmt='d', cbar=False)
+
+plt.xlabel('Y_truth')
+plt.ylabel('Y_pred')
+plt.show()
 
 #------------------------------------------------------------
 
