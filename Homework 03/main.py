@@ -5,8 +5,9 @@ import os
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import seaborn as sns
-# Retrieving data from the csv file.
+import math
 
+# Retrieving data from the csv file.
 file_name = "cses4_cut.csv"
 path = os.path.abspath(os.getcwd()) + '\\' + file_name
 
@@ -27,53 +28,153 @@ y_truth_binary = np.array([f(i) for i in data[:, -1]])
 X = data[:,: -1]
 features = features[:-1]
 
-# -Filtering data:
-#   A number of columns is chosen according to their impact on
-#   the prediction and the others are discarded.
-#
-# -The columns being:
-#   Gender, Education, Main Occupation, Religiosity, Race, Age.
-
-# An array holding the indicies of the chosen features.
-# Gender: D2002, Education: D2003, Occupation: D2011,
-# Religiosity: D2023, Race: D2027, Age: age.
-selected_features = ['D2002', 'D2003', 'D2011', 'D2023', 'D2027', 'age']
-features = features.to_list()
-selected_features_indecies = [features.index(i) for i in selected_features]
-
-X = np.array([np.stack((X[:,i])) for i in selected_features_indecies]).T
-
 from sklearn.preprocessing import OneHotEncoder
 oneHotEncoder = OneHotEncoder()
 
-# X_encoded = [np.array(X[:,i]).reshape(-1, 1) for i in range(0, len(selected_features))]
-# X_encoded = np.array([np.stack(oneHotEncoder.fit_transform(X_encoded[i])) for i in range(0, len(selected_features))]).T
+from sklearn.svm import SVC
 
-# print(X_encoded[0])
+from sklearn.linear_model import LogisticRegression
 
+# Feature selection:
+# Using CHI2
+from sklearn.feature_selection import chi2
+from sklearn.feature_selection import SelectKBest
+
+test = SelectKBest(score_func=chi2, k='all')
+fit = test.fit(X, y_truth_binary)
+scores = fit.scores_
+X = test.fit_transform(X, y_truth_binary)
+
+# Optimizing the number of features to select.
+# This optimization is based on the scores
+# of the features obtained from the SelectBest
+# function and a threshold (impact_threshold)
+def optimal_features(impact_threshold):
+    n = 0
+    for score in scores:
+        if score > impact_threshold:
+            n += 1
+    return n
+
+impact_threshold = 10000
+n = optimal_features(impact_threshold)
+
+test = SelectKBest(score_func=chi2, k=n)
+fit = test.fit(X, y_truth_binary)
+scores = fit.scores_    
+X = test.fit_transform(X, y_truth_binary)
 
 # Constructing train and test sets.
-# X_train, X_test, Y_train, Y_test = train_test_split(X_encoded, y_truth_binary, test_size = 0.2, random_state=1)
-X_train, X_test, Y_train, Y_test = train_test_split(X, y_truth_binary, test_size = 0.2, random_state=1)
+test_size = 0.2
+X_train, X_test, Y_train, Y_test = train_test_split(X, y_truth_binary, test_size = test_size, random_state=1)
 
+# To calclate the accuracy of the models.
 from sklearn.metrics import accuracy_score
 
-
 #--------------------------------------------
-# --| Using naive bayes classifier |---------
+# --|   Using K Nearest Neighbor   |---------
 #--------------------------------------------
 
-from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 
-# Fitting the data into the model.
-model = GaussianNB()
+# Finds the optimal value for k for the K nearest
+# Neighbor classifier by testing the accuricies 
+# of multiple runs of the KNN classifier.
+def optimal_k(step):
+    accuracies = []
+    i = 1
+    while(i < len(X_train)):
+        k = i
+        model = KNeighborsClassifier(n_neighbors=k)
+        model.fit(X_train, Y_train)
+        y_pred = model.predict(X_test)
+        knn_accuracy = accuracy_score(Y_test, y_pred)    
+        accuracies.append(knn_accuracy)
+        i += step
+    print(accuracies)
+    return (np.argmax(accuracies) + 1) * step, accuracies
+        
+# After running the below line of code I figured
+# That the optimal k is 30.
+# NOTE: Running the optimal_k() function would
+# take a long time. approximately 35-40 mins.
+# NOTE: I run the function and provided a txt file
+# that contains the accuracy values for each run.
+
+step = 10
+# k = optimal_k(step)
+
+k = 30
+model = KNeighborsClassifier(n_neighbors=k)
+
 model.fit(X_train, Y_train)
-
-# Prediction using the test set.
 y_pred = model.predict(X_test)
 
-nb_accuracy = accuracy_score(Y_test, y_pred)
-print("Naive Bayes classifier accuracy: {}".format(nb_accuracy))
+knn_accuracy = accuracy_score(Y_test, y_pred)
+print("K nearest neighbors classifier accuracy: {}".format(knn_accuracy))
+
+# Shows the graph of the optimization of the k
+# value for the KNN.
+def show_k_optimization(step):
+    file_name = "knn_optimization.txt"
+    text_file = open(file_name, "r")
+    entries = text_file.readline()
+    entries = np.array(entries.split(", ")).astype(float)
+
+    indep_vars = np.array(list(range(0, len(entries))))
+    indep_vars = np.multiply(step, indep_vars)
+
+    plt.xlabel("K value")
+    plt.ylabel("Accuracy")
+
+    plt.plot(indep_vars, entries)
+    plt.show()
+
+show_k_optimization(step)
+
+#------------------------------------------------------------
+# --|   Classification with Logistic Regression    |---------
+#------------------------------------------------------------
+
+
+def optimal_iter_number(step):
+    iter_number = 10
+    epsilon = 0.0001
+    accuracies = []
+    i = 0
+    while(i < len(X_train)):
+        if i != 0:
+            iter_number = i
+            
+        model = LogisticRegression(random_state=0, solver='saga', max_iter=iter_number)
+        model.fit(X_train, Y_train)
+        y_pred = model.predict(X_test)
+        logistic_accuracy = accuracy_score(Y_test, y_pred)
+        accuracies.append(logistic_accuracy)
+
+        if len(accuracies) >= 2:
+            if (accuracies[i] - accuracies[i - 1]) < epsilon:
+                break
+
+        print(i)
+        i += step
+    return i
+
+step = 100
+optimal_iter_number(step)
+
+iter_number = 100
+model = LogisticRegression(random_state=0, solver='saga', max_iter=iter_number)
+model.fit(X_train, Y_train)
+y_pred = model.predict(X_test)
+logistic_accuracy = accuracy_score(Y_test, y_pred)
+print("Logistic Regression accuracy: {}".format(logistic_accuracy))
+
+#------------------------------------------------------------
+
+
+# from sklearn.metrics import classification_report
+# print(classification_report(X_test, Y_test))
 
 # Plotting.
 # plt.scatter(X_train[:,-1], Y_train, color="blue")
