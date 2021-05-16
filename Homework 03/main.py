@@ -29,8 +29,7 @@ y_truth_binary = np.array([f(i) for i in data[:, -1]])
 X = data[:,1: -1]
 features = features[:-1]
 
-# Feature selection:
-# Using CHI2
+# Feature selection using CHI2.
 from sklearn.feature_selection import chi2
 from sklearn.feature_selection import SelectKBest
 
@@ -92,7 +91,7 @@ def optimal_k(step):
         model = KNeighborsClassifier(n_neighbors=k)
         model.fit(X_train, Y_train)
         y_pred = model.predict(X_test)
-        knn_accuracy = accuracy_score(Y_test, y_pred)    
+        knn_accuracy = accuracy_score(Y_test, y_pred)
         accuracies.append(knn_accuracy)
         i += step
     return np.argmax(accuracies) * step
@@ -121,7 +120,7 @@ print("K nearest neighbors classifier accuracy: {}".format(knn_accuracy))
 
 # Shows the graph of the optimization of the k
 # value for the KNN.
-def plot_optimization(step, file_name, xlabel, ylabel):
+def plot_optimization(step, file_name, xlabel, ylabel, title):
 
     text_file = open(file_name, "r")
     entries = text_file.readline()
@@ -130,6 +129,7 @@ def plot_optimization(step, file_name, xlabel, ylabel):
     indep_vars = np.array(list(range(0, len(entries))))
     indep_vars = np.multiply(step, indep_vars)
 
+    plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
@@ -137,13 +137,14 @@ def plot_optimization(step, file_name, xlabel, ylabel):
     plt.show()
 
 file_name = "knn_optimization.txt"
-plot_optimization(step, file_name, "K value", "Accuracy")
+plot_optimization(step, file_name, "K value", "Accuracy", "KNN: K value optimization")
 
 # Confusion matrix configuration
 
 conf_matrix = confusion_matrix(Y_test, y_pred)
 sns.heatmap(conf_matrix.T, square=True, annot=True, fmt='d', cbar=False)
 
+plt.title("K Nearest Neighbor Confusion Matrix")
 plt.xlabel('Y_truth')
 plt.ylabel('Y_pred')
 
@@ -166,7 +167,6 @@ def optimal_iter_number(step):
         accuracies.append(logistic_accuracy)
 
         i += step
-    print(accuracies)
     return i
 
 step = 10
@@ -190,15 +190,17 @@ logistic_accuracy = accuracy_score(Y_test, y_pred)
 print("Logistic Regression accuracy: {}".format(logistic_accuracy))
 
 file_name = "logit_optimization.txt"
-plot_optimization(step, file_name, "Maximum iterations", "Accuracy")
+plot_optimization(step, file_name, "Maximum iterations", "Accuracy", "Logit: Max iteration value optimization")
 
 # Confusion matrix configuration
 
 conf_matrix = confusion_matrix(Y_test, y_pred)
 sns.heatmap(conf_matrix.T, square=True, annot=True, fmt='d', cbar=False)
 
+plt.title("Logistic Regression Confusion Matrix")
 plt.xlabel('Y_truth')
 plt.ylabel('Y_pred')
+
 plt.show()
 
 #------------------------------------------------------------
