@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from scipy.sparse.base import SparseEfficiencyWarning
 from sklearn.model_selection import train_test_split
 import seaborn as sns
 import math
@@ -24,26 +25,19 @@ y_truth = data[:, -1]
 f = lambda x : 1 if x == True else 0
 y_truth_binary = np.array([f(i) for i in data[:, -1]])
 
-# Retrieving the data points while execluding the lables.
-X = data[:,: -1]
+# Retrieving the data points while execluding the lables and the numbering.
+X = data[:,1: -1]
 features = features[:-1]
-
-from sklearn.preprocessing import OneHotEncoder
-oneHotEncoder = OneHotEncoder()
-
-from sklearn.svm import SVC
-
-from sklearn.linear_model import LogisticRegression
 
 # Feature selection:
 # Using CHI2
 from sklearn.feature_selection import chi2
 from sklearn.feature_selection import SelectKBest
 
-test = SelectKBest(score_func=chi2, k='all')
-fit = test.fit(X, y_truth_binary)
+selected = SelectKBest(score_func=chi2, k='all')
+fit = selected.fit(X, y_truth_binary)
 scores = fit.scores_
-X = test.fit_transform(X, y_truth_binary)
+X = selected.fit_transform(X, y_truth_binary)
 
 # Optimizing the number of features to select.
 # This optimization is based on the scores
@@ -56,17 +50,24 @@ def optimal_features(impact_threshold):
             n += 1
     return n
 
+# impact_threshold: The features with scores
+# greater than the value of this variable
+# will be selected.
 impact_threshold = 10000
-n = optimal_features(impact_threshold)
+optimal_n = optimal_features(impact_threshold)
 
-test = SelectKBest(score_func=chi2, k=n)
-fit = test.fit(X, y_truth_binary)
-scores = fit.scores_    
-X = test.fit_transform(X, y_truth_binary)
+selected = SelectKBest(score_func=chi2, k=optimal_n)
+fit = selected.fit(X, y_truth_binary) 
+X = selected.fit_transform(X, y_truth_binary)
+
+# One-hot encoding the data.
+from sklearn.preprocessing import OneHotEncoder
+oneHotEncoder = OneHotEncoder(sparse=True)
+X_encoded = oneHotEncoder.fit_transform(X)
 
 # Constructing train and test sets.
 test_size = 0.2
-X_train, X_test, Y_train, Y_test = train_test_split(X, y_truth_binary, test_size = test_size, random_state=1)
+X_train, X_test, Y_train, Y_test = train_test_split(X_encoded, y_truth_binary, test_size = test_size, random_state=1)
 
 # To calclate the accuracy of the models.
 from sklearn.metrics import accuracy_score
@@ -86,7 +87,7 @@ from sklearn.neighbors import KNeighborsClassifier
 def optimal_k(step):
     accuracies = []
     i = 1
-    while(i < len(X_train)):
+    while(i < X_train.shape[0]):
         k = i
         model = KNeighborsClassifier(n_neighbors=k)
         model.fit(X_train, Y_train)
@@ -94,15 +95,14 @@ def optimal_k(step):
         knn_accuracy = accuracy_score(Y_test, y_pred)    
         accuracies.append(knn_accuracy)
         i += step
-    print(accuracies)
-    return (np.argmax(accuracies) + 1) * step
+    return np.argmax(accuracies) * step
         
 step = 10
 
 # After running the below line of code I figured
 # That the optimal k is 30.
 # NOTE: Running the optimal_k() function would
-# take a long time. approximately 35-40 mins.
+# take a long time. approximately 15-25 mins.
 # NOTE: I ran the function and provided a txt file
 # called knn_optimization that contains the accuracy
 #  values for each run.
@@ -146,17 +146,19 @@ sns.heatmap(conf_matrix.T, square=True, annot=True, fmt='d', cbar=False)
 
 plt.xlabel('Y_truth')
 plt.ylabel('Y_pred')
+
 plt.show()
 
 #------------------------------------------------------------
 # --|   Classification with Logistic Regression    |---------
 #------------------------------------------------------------
 
+from sklearn.linear_model import LogisticRegression
+
 def optimal_iter_number(step):
     accuracies = []
     i = 1
-    while(i < len(X_train)):
-            
+    while(i < X_train.shape[0]):  
         model = LogisticRegression(random_state=0, solver='sag', max_iter=i)
         model.fit(X_train, Y_train)
         y_pred = model.predict(X_test)
@@ -164,21 +166,22 @@ def optimal_iter_number(step):
         accuracies.append(logistic_accuracy)
 
         i += step
+    print(accuracies)
     return i
 
-step = 100
+step = 10
 
 # After running the below line of code I figured
-# That the optimal iter_number ranges from 1 to 400.
+# That the optimal iter_number ranges from 10 to 80.
 # NOTE: Running the optimal_iter_number() function would
-# take a long time. approximately 15-20 mins.
+# take a long time. approximately 10-15 mins.
 # NOTE: I ran the function and provided a txt file
 # called logit_optimization that contains the accuracy
 # values for each run.
 
 # iter_number = optimal_iter_number(step)
 
-iter_number = 400
+iter_number = 45
 
 model = LogisticRegression(random_state=0, solver='sag', max_iter=iter_number)
 model.fit(X_train, Y_train)
